@@ -39,4 +39,4 @@ exec java ${JAVA_OPTS:--Xms1G -Xmx2G} \
     -XX:+UseG1GC \
     -XX:+ParallelRefProcEnabled \
     -XX:MaxGCPauseMillis=200 \
-    -jar paper.jar --nogui
+    -jar paper.jar --nogui --bundled
