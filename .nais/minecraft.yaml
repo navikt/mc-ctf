@@ -1,0 +1,70 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: minecraft-ctf
+  namespace: ctf
+  labels:
+    team: ctf
+spec:
+  image: "{{image}}"
+  port: 8080             # healthcheck HTTP server (python3 -m http.server)
+  replicas:
+    min: 1
+    max: 1
+  strategy:
+    type: Recreate       # required for ReadWriteOnce PVC — stops old pod before starting new one
+  env:
+    - name: JAVA_OPTS
+      value: "-Xms1G -Xmx2G"
+    - name: MC_VERSION
+      value: "1.21.11"
+  filesFrom:
+    - persistentVolumeClaim: minecraft-ctf-data
+      mountPath: /data
+    - emptyDir: {}
+      mountPath: /tmp
+  liveness:
+    path: /
+    port: 8080
+    initialDelay: 120 # PaperMC world generation on first boot takes time
+    periodSeconds: 20
+    failureThreshold: 10
+  readiness:
+    path: /
+    port: 8080
+    initialDelay: 120
+    periodSeconds: 20
+    failureThreshold: 5
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      memory: 3Gi
+  # No ingress — Minecraft uses raw TCP, not HTTP.
+  # External access is via the LoadBalancer Service below.
+---
+# Expose Minecraft TCP on an internal GCP Load Balancer.
+# The annotation cloud.google.com/load-balancer-type: "Internal" ensures GCP
+# assigns a private VPC IP only — never a public internet address.
+# Reachable only via the internal network/VPN, the same trust boundary as
+# ingresses on intern.nav.no / ansatt.nav.no.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-ctf-tcp
+  namespace: ctf
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+  labels:
+    app: minecraft-ctf
+    team: ctf
+spec:
+  selector:
+    app: minecraft-ctf
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: 25565
+      protocol: TCP
+  type: LoadBalancer
