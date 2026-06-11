@@ -6,7 +6,7 @@ metadata:
   labels:
     team: ctf
 spec:
-  image: "europe-north1-docker.pkg.dev/nais-management-233d/ctf/mc-ctf:2026.06.11-11.32-22c3412"
+  image: "{{image}}"
   port: 8080             # healthcheck HTTP server (python3 -m http.server)
   replicas:
     min: 1
