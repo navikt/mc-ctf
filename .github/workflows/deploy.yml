@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy-infra:
+        description: "Deploy PVC and Service (only needed once)"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -22,3 +27,43 @@ jobs:
         id: docker-build-push
         with:
           team: ctf
+
+  deploy-infra:
+    name: Deploy PVC and Service (one-time)
+    needs: build
+    if: ${{ inputs.deploy-infra == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Deploy PVC
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/minecraft-pvc.yaml
+
+      - name: Deploy Service
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/minecraft-service.yaml
+
+  deploy:
+    name: Deploy application
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Deploy minecraft-ctf
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/minecraft.yaml
+          IMAGE: ${{ needs.build.outputs.image }}

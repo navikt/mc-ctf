@@ -6,7 +6,7 @@ metadata:
   labels:
     team: ctf
 spec:
-  image: "{{image}}"
+  image: "europe-north1-docker.pkg.dev/nais-management-233d/ctf/mc-ctf:2026.06.11-11.32-22c3412"
   port: 8080             # healthcheck HTTP server (python3 -m http.server)
   replicas:
     min: 1
@@ -41,30 +41,3 @@ spec:
       memory: 2Gi
     limits:
       memory: 3Gi
-  # No ingress — Minecraft uses raw TCP, not HTTP.
-  # External access is via the LoadBalancer Service below.
----
-# Expose Minecraft TCP on an internal GCP Load Balancer.
-# The annotation cloud.google.com/load-balancer-type: "Internal" ensures GCP
-# assigns a private VPC IP only — never a public internet address.
-# Reachable only via the internal network/VPN, the same trust boundary as
-# ingresses on intern.nav.no / ansatt.nav.no.
-apiVersion: v1
-kind: Service
-metadata:
-  name: minecraft-ctf-tcp
-  namespace: ctf
-  annotations:
-    cloud.google.com/load-balancer-type: "Internal"
-  labels:
-    app: minecraft-ctf
-    team: ctf
-spec:
-  selector:
-    app: minecraft-ctf
-  ports:
-    - name: minecraft
-      port: 25565
-      targetPort: 25565
-      protocol: TCP
-  type: LoadBalancer

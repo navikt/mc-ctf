@@ -1,7 +1,17 @@
 FROM eclipse-temurin:25-jre-noble
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl jq \
+ARG MC_VERSION=1.21.11
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl jq python3 \
     && rm -rf /var/lib/apt/lists/*
+
+# Download PaperMC at build time using the fill API.
+RUN DOWNLOAD_URL=$(curl -fsSL -H "User-Agent: nais-minecraft-ctf/1.0" \
+      "https://fill.papermc.io/v3/projects/paper/versions/${MC_VERSION}/builds" \
+      | jq -r 'map(select(.channel == "STABLE")) | .[0] | .downloads."server:default".url') && \
+    echo "Downloading PaperMC from: ${DOWNLOAD_URL}" && \
+    mkdir -p /app && \
+    curl -fsSL -o /app/paper.jar "${DOWNLOAD_URL}"
 
 # Download EssentialsX core and Spawn module.
 # Both are required — EssentialsXSpawn depends on EssentialsX core.
