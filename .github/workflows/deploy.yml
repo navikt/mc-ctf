@@ -29,10 +29,10 @@ jobs:
         uses: nais/docker-build-push@05dbb6091b30bd84279c6d64a45ef8782fd410a5 # v0
         id: docker-build-push
         with:
-          team: ctf
+          team: appsec-ctf
 
   deploy-infra:
-    name: Deploy PVC and Service (one-time)
+    name: Deploy PVC
     needs: build
     if: ${{ inputs.deploy-infra == true }}
     runs-on: ubuntu-latest
@@ -47,12 +47,6 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/minecraft-pvc.yaml
-
-      - name: Deploy Service
-        uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-gcp
-          RESOURCE: .nais/minecraft-service.yaml
 
   deploy:
     name: Deploy application

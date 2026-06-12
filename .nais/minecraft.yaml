@@ -2,9 +2,9 @@ apiVersion: nais.io/v1alpha1
 kind: Application
 metadata:
   name: minecraft-ctf
-  namespace: ctf
+  namespace: appsec-ctf
   labels:
-    team: ctf
+    team: appsec-ctf
 spec:
   image: "{{image}}"
   port: 8080             # healthcheck HTTP server (python3 -m http.server)
