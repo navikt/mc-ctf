@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Build and push with NAIS
-        uses: nais/docker-build-push@05dbb6091b30bd84279c6d64a45ef8782fd410a5 # v0
+        uses: nais/docker-build-push@cd5ec5663feb0e05c3fa374d1fb442605b046c6b
         id: docker-build-push
         with:
           team: appsec-ctf
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Deploy PVC
-        uses: nais/deploy/actions/deploy@v2
+        uses: nais/deploy/actions/deploy@8a6fb62e73f837af6287d5db84a46ea96aa6c30d # v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/minecraft-pvc.yaml
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Deploy minecraft-ctf
-        uses: nais/deploy/actions/deploy@v2
+        uses: nais/deploy/actions/deploy@8a6fb62e73f837af6287d5db84a46ea96aa6c30d # v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: .nais/minecraft.yaml
