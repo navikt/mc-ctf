@@ -15,6 +15,9 @@ if [ ! -f "${DATA}/paper.jar" ]; then
     cp /app/paper.jar "${DATA}/paper.jar"
     cp /app/server.properties "${DATA}/server.properties"
 
+    mkdir -p "${DATA}/config"
+    cp /app/paper-global.yml "${DATA}/config/paper-global.yml"
+
     mkdir -p "${DATA}/plugins"
     cp /app/plugins/*.jar "${DATA}/plugins/"
 

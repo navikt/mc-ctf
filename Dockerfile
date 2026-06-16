@@ -32,6 +32,7 @@ RUN mkdir -p /app/plugins && \
 # Bake in static server config, plugin config, and entrypoint.
 # World state is managed at runtime via the PVC (/data).
 COPY --chown=1069:1069 server/server.properties /app/server.properties
+COPY --chown=1069:1069 server/paper-global.yml /app/paper-global.yml
 COPY --chown=1069:1069 server/essentials-spawn-config.yml /app/essentials-spawn-config.yml
 COPY --chown=1069:1069 entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
