@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MC Hacking Workshop</title>
+  <link rel="stylesheet" href="reveal/reveal.min.css" />
+  <link rel="stylesheet" href="reveal/theme-black.min.css" />
+  <style>
+    :root {
+      --r-background-color: #0f1923;
+      --r-main-color: #e8e8e8;
+      --r-heading-color: #5dba47;
+      --r-link-color: #5dba47;
+      --r-link-color-hover: #7dd664;
+      --r-heading-text-transform: none;
+      --r-heading-font-weight: 700;
+    }
+    .reveal-viewport { background: #0f1923; }
+
+    .reveal .slides section { text-align: left; }
+    .reveal h1, .reveal h2 { text-align: center; }
+
+    .accent { color: #5dba47; }
+    .dim    { color: #888; font-size: 0.8em; }
+
+    .reveal ul { margin-left: 1.2em; }
+    .reveal ul li { margin-bottom: 0.3em; }
+
+    .logo {
+      width: 180px;
+      margin-bottom: 1em;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .agenda-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85em;
+    }
+    .agenda-table td {
+      padding: 0.4em 0.8em;
+      border-bottom: 1px solid #333;
+    }
+    .agenda-table td:first-child {
+      color: #5dba47;
+      white-space: nowrap;
+      font-weight: bold;
+      width: 30%;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2em;
+      align-items: start;
+    }
+
+    pre.small { font-size: 0.45em !important; }
+
+    .pill {
+      display: inline-block;
+      background: #5dba47;
+      color: #0f1923;
+      border-radius: 4px;
+      padding: 0.1em 0.5em;
+      font-weight: bold;
+      font-size: 0.85em;
+      margin-right: 0.3em;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ── TITLE ─────────────────────────────────────────────── -->
+    <section>
+      <img src="ws-logo.png" alt="MC Hacking logo" style="width:80%;display:block;margin:auto;" />
+    </section>
+
+    <!-- ── AGENDA ────────────────────────────────────────────── -->
+    <section>
+      <h2>Agenda</h2>
+      <table class="agenda-table">
+        <tr><td>10:00</td><td>Intro, oppsett og demo</td></tr>
+        <tr><td>11:00</td><td>Lunsj i kantina</td></tr>
+        <tr><td>11:30</td><td>CTF starter — hack away!</td></tr>
+        <tr><td>15:00</td><td>Mat og drikke</td></tr>
+        <tr><td>16:00</td><td>Hacking &amp; øl i sosialarealet</td></tr>
+      </table>
+    </section>
+
+    <!-- ── WHAT ARE WE DOING ─────────────────────────────────── -->
+    <section>
+      <h2>Hva gjør vi i dag?</h2>
+      <ul>
+        <li>Hacke en Minecraft-server ved å modde klienten</li>
+        <li>Finn flagg gjemt rundt på serveren</li>
+        <li>Post dem på CTFd-serveren</li>
+      </ul>
+      <br/>
+      <p class="dim">
+        Litt som Burp Suite for HTTP — i stedet for å intercepte nettverkspakker,
+        injiserer vi kode i klienten og endrer oppførselen fra innsiden.
+      </p>
+    </section>
+
+    <!-- ── WHY MINECRAFT ─────────────────────────────────────── -->
+    <section>
+      <h2>Hvorfor Minecraft?</h2>
+      <ul>
+        <li>Komplekst system med veldefinerte grensesnitt</li>
+        <li>Klient–server-arkitektur lik moderne applikasjoner</li>
+        <li>Visuelt og gøy — du ser hva som skjer</li>
+        <li>Samme tankesett som sikkerhetstesting av ekte systemer</li>
+      </ul>
+    </section>
+
+    <!-- ── HOW ───────────────────────────────────────────────── -->
+    <section>
+      <h2>Hvordan?</h2>
+      <ul>
+        <li>Vi skriver en <span class="accent">Fabric mod</span> — et Java-program som kjører inne i Minecraft-klienten</li>
+        <li>Moden kjører lokalt hos deg. Serveren vet ikke om den.</li>
+        <li>Vi bruker <span class="accent">hooks</span> (events) til å koble oss på hendelser i spillet</li>
+      </ul>
+      <br/>
+      <pre><code class="text" style="font-size:0.7em;">onInitializeClient()        ← kjøres én gang ved oppstart
+    └── event.register()    ← "når X skjer, kjør dette"
+            └── din kode    ← kjøres når X faktisk skjer</code></pre>
+    </section>
+
+    <!-- ── DEMO: SETUP ───────────────────────────────────────── -->
+    <section>
+      <h2>Demo — Oppsett</h2>
+      <ol>
+        <li>Klon repoet og åpne i IntelliJ IDEA</li>
+        <li>La Gradle importere ferdig (laster ned Minecraft)</li>
+        <li>Generer Minecraft-kilder:
+          <pre><code>Gradle → Tasks → fabric → genSources</code></pre>
+        </li>
+        <li>Velg <strong>Minecraft Client</strong> i Run-menyen og trykk Run</li>
+      </ol>
+      <p class="dim">Etter genSources kan du Ctrl+Klikke deg inn i hvilken som helst Minecraft-klasse.</p>
+    </section>
+
+    <!-- ── DEMO: FIRST MOD ──────────────────────────────────── -->
+    <section>
+      <h2>Demo — Første mod</h2>
+      <p>Vis en melding i chatten når spilleren joiner en verden.</p>
+      <pre class="small"><code class="java">ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+    client.player.displayClientMessage(
+        Component.literal("Velkommen til MC Hacking! 🎉"),
+        false
+    );
+});</code></pre>
+      <p class="dim">
+        Funnet ved å søke i Fabric API etter join-events →
+        <code>ClientPlayConnectionEvents</code> →
+        lese Javadoc på <code>JOIN</code>
+      </p>
+    </section>
+
+    <!-- ── DEMO: KEYBINDING ──────────────────────────────────── -->
+    <section>
+      <h2>Demo — Keybinding</h2>
+      <p>Trykk en knapp → send en chatmelding.</p>
+      <div class="two-col">
+        <div>
+          <p class="dim">Registrer knappen én gang:</p>
+          <pre class="small"><code class="java">var key = KeyBindingHelper
+  .registerKeyBinding(
+    new KeyMapping(
+      "key.examplemod.action",
+      KEYSYM,
+      GLFW.GLFW_KEY_R,
+      category
+  ));</code></pre>
+        </div>
+        <div>
+          <p class="dim">Poll hvert tick:</p>
+          <pre class="small"><code class="java">ClientTickEvents
+  .END_CLIENT_TICK
+  .register(client -> {
+    while (key.consumeClick()) {
+      // din kode her
+    }
+  });</code></pre>
+        </div>
+      </div>
+      <p class="dim">→ <a href="https://docs.fabricmc.net/develop/key-mappings">docs.fabricmc.net/develop/key-mappings</a></p>
+    </section>
+
+    <!-- ── RESEARCH FLOW ─────────────────────────────────────── -->
+    <section>
+      <h2>Hvordan finne riktig hook</h2>
+      <ol>
+        <li>Beskriv hva du vil: <em>"gjør noe når spilleren hopper"</em></li>
+        <li>Søk i <a href="https://docs.fabricmc.net/develop/events">Fabric docs</a> eller bla i <a href="https://github.com/FabricMC/fabric-api/tree/1.21.11">fabric-api kildekoden</a></li>
+        <li>Les Javadoc på eventet — sjekk callback-signaturen</li>
+        <li>Ingen event? Bruk en <span class="accent">Mixin</span> for å injisere kode direkte i en Minecraft-metode</li>
+      </ol>
+      <p class="dim">→ <a href="https://fabricmc.net/wiki/tutorial:mixin_introduction">Mixin intro</a> · <a href="https://github.com/SpongePowered/Mixin/wiki">SpongePowered Mixin wiki</a></p>
+    </section>
+
+    <!-- ── CTF ───────────────────────────────────────────────── -->
+    <section>
+      <h2>CTF — 11:30</h2>
+      <ul>
+        <li>Alle får tilgang til Minecraft-serveren</li>
+        <li>Flagg er gjemt rundt omkring — finn dem, post dem på CTFd</li>
+        <li>Hint og dokumentasjon i <code>WORKSHOP.md</code></li>
+        <li>Finner du noe kult? Koble til storskjermen og vis det frem!</li>
+      </ul>
+      <br/>
+      <p style="text-align:center; font-size:1.2em;">
+        <span class="accent">Lykke til 🎉</span>
+      </p>
+    </section>
+
+  </div>
+</div>
+
+<script src="reveal/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'fade',
+    controls: true,
+    progress: true,
+  });
+</script>
+</body>
+</html>
