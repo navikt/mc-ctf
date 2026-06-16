@@ -13,10 +13,9 @@ if [ ! -f "${DATA}/paper.jar" ]; then
 
     mkdir -p "${DATA}"
     cp /app/paper.jar "${DATA}/paper.jar"
-    cp /app/server.properties "${DATA}/server.properties"
 
-    mkdir -p "${DATA}/config"
-    cp /app/paper-global.yml "${DATA}/config/paper-global.yml"
+    mkdir -p "${DATA}/cache"
+    cp /app/cache/mojang_${MC_VERSION}.jar "${DATA}/cache/mojang_${MC_VERSION}.jar"
 
     mkdir -p "${DATA}/plugins"
     cp /app/plugins/*.jar "${DATA}/plugins/"
@@ -29,13 +28,14 @@ if [ ! -f "${DATA}/paper.jar" ]; then
     echo "[entrypoint] Seeding complete."
 fi
 
-# ── EssentialsX config patches ───────────────────────────────────────────────
-# Essentials generates its config.yml on first run — we can't seed it before
-# that. Instead, patch it on every boot so it survives plugin upgrades too.
-ESSENTIALS_CONFIG="${DATA}/plugins/Essentials/config.yml"
-if [ -f "${ESSENTIALS_CONFIG}" ]; then
-    sed -i 's/^update-check: true/update-check: false/' "${ESSENTIALS_CONFIG}"
-fi
+# ── Always overwrite static config from image ─────────────────────────────────
+# These files are baked into the image and should always reflect the image's
+# settings, not whatever is cached on the PVC.
+cp /app/server.properties "${DATA}/server.properties"
+mkdir -p "${DATA}/config"
+cp /app/paper-global.yml "${DATA}/config/paper-global.yml"
+mkdir -p "${DATA}/plugins/Essentials"
+cp /app/essentials-config.yml "${DATA}/plugins/Essentials/config.yml"
 
 # ── Healthcheck HTTP server ───────────────────────────────────────────────────
 # NAIS liveness/readiness probes expect HTTP 200 on port 8080.

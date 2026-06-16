@@ -18,6 +18,21 @@ RUN mkdir -p /app && \
     echo "${EXPECTED_SHA}  /app/paper.jar" | sha256sum -c - && \
     rm /tmp/paper-builds.json
 
+# Download the Mojang server jar at build time and pre-seed Paperclip's cache.
+# Paperclip looks for cache/mojang_<version>.jar relative to the working directory
+# on startup — finding it there skips the runtime download entirely.
+# The Mojang manifest provides a SHA1 checksum — verify before accepting.
+RUN curl -fsSL "https://launchermeta.mojang.com/mc/game/version_manifest.json" \
+      -o /tmp/version-manifest.json && \
+    MANIFEST_URL=$(jq -r --arg v "${MC_VERSION}" '.versions[] | select(.id == $v) | .url' /tmp/version-manifest.json) && \
+    curl -fsSL "${MANIFEST_URL}" -o /tmp/version.json && \
+    MOJANG_URL=$(jq -r '.downloads.server.url' /tmp/version.json) && \
+    MOJANG_SHA1=$(jq -r '.downloads.server.sha1' /tmp/version.json) && \
+    mkdir -p /app/cache && \
+    curl -fsSL -o "/app/cache/mojang_${MC_VERSION}.jar" "${MOJANG_URL}" && \
+    echo "${MOJANG_SHA1}  /app/cache/mojang_${MC_VERSION}.jar" | sha1sum -c - && \
+    rm /tmp/version-manifest.json /tmp/version.json
+
 # Download EssentialsX core and Spawn module.
 # Both are required — EssentialsXSpawn depends on EssentialsX core.
 # Checksums computed from the 2.22.0 release artifacts.
@@ -33,6 +48,7 @@ RUN mkdir -p /app/plugins && \
 # World state is managed at runtime via the PVC (/data).
 COPY --chown=1069:1069 server/server.properties /app/server.properties
 COPY --chown=1069:1069 server/paper-global.yml /app/paper-global.yml
+COPY --chown=1069:1069 server/essentials-config.yml /app/essentials-config.yml
 COPY --chown=1069:1069 server/essentials-spawn-config.yml /app/essentials-spawn-config.yml
 COPY --chown=1069:1069 entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
