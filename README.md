@@ -15,6 +15,7 @@ Runs on NAIS (`appsec-ctf` namespace), world state persisted in a PVC.
 │   ├── server.properties               # baked into image — static server config
 │   ├── paper-global.yml                # baked into image — PaperMC global config
 │   ├── essentials-config.yml           # baked into image — EssentialsX config
+│   ├── essentials-spawn.yml            # baked into image — EssentialsX spawn point
 │   └── essentials-spawn-config.yml     # baked into image — EssentialsXSpawn config
 ├── Dockerfile
 └── entrypoint.sh                       # first-boot seed logic + healthcheck server
@@ -71,28 +72,6 @@ kubectl exec -n appsec-ctf ${POD} -- bash -c \
 ```
 
 The server restarts automatically and loads the new world.
-
-### Setting the spawn point
-
-EssentialsX reads the spawn from `/data/plugins/Essentials/spawn.yml`. Set it directly:
-
-```bash
-kubectl exec -n appsec-ctf ${POD} -- bash -c "cat > /data/plugins/Essentials/spawn.yml << 'EOF'
-spawns:
-  default:
-    world: mcworkshop
-    x: -543.0
-    y: 71.0
-    z: -368.0
-    yaw: 0.0
-    pitch: 0.0
-EOF"
-```
-
-Then restart PaperMC to pick it up:
-```bash
-kubectl exec -n appsec-ctf ${POD} -- bash -c "kill \$(pgrep -f paper.jar)"
-```
 
 ## PVC reset
 

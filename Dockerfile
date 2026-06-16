@@ -49,6 +49,7 @@ RUN mkdir -p /app/plugins && \
 COPY --chown=1069:1069 server/server.properties /app/server.properties
 COPY --chown=1069:1069 server/paper-global.yml /app/paper-global.yml
 COPY --chown=1069:1069 server/essentials-config.yml /app/essentials-config.yml
+COPY --chown=1069:1069 server/essentials-spawn.yml /app/essentials-spawn.yml
 COPY --chown=1069:1069 server/essentials-spawn-config.yml /app/essentials-spawn-config.yml
 COPY --chown=1069:1069 entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

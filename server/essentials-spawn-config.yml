@@ -1,4 +1,5 @@
 # EssentialsXSpawn configuration
+# Docs: https://essentialsx.net/wiki/modules#essentialsx-spawn
 # Baked into the image and seeded to /data/plugins/EssentialsXSpawn/config.yml on first boot.
 
 newbies:

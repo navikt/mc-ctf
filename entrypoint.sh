@@ -36,6 +36,7 @@ mkdir -p "${DATA}/config"
 cp /app/paper-global.yml "${DATA}/config/paper-global.yml"
 mkdir -p "${DATA}/plugins/Essentials"
 cp /app/essentials-config.yml "${DATA}/plugins/Essentials/config.yml"
+cp /app/essentials-spawn.yml "${DATA}/plugins/Essentials/spawn.yml"
 
 # ── Healthcheck HTTP server ───────────────────────────────────────────────────
 # NAIS liveness/readiness probes expect HTTP 200 on port 8080.

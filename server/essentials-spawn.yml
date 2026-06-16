@@ -1,0 +1,11 @@
+# EssentialsX spawn point configuration
+# Docs: https://essentialsx.net/wiki/modules#essentialsx-spawn
+# Baked into the image — edit this file to change the spawn point for all players.
+spawns:
+  default:
+    world: mcworkshop
+    x: -543.0
+    y: 71.0
+    z: -368.0
+    yaw: 0.0
+    pitch: 0.0
