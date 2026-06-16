@@ -137,8 +137,11 @@
     <section>
       <h2>Demo — Oppsett</h2>
       <ol>
-        <li>Klon repoet og åpne i IntelliJ IDEA</li>
-        <li>La Gradle importere ferdig (laster ned Minecraft)</li>
+        <li>Klon repoet — <strong class="accent">husk tag 1.21.11!</strong>
+          <pre><code>git clone --branch 1.21.11 \
+  https://github.com/FabricMC/fabric-example-mod</code></pre>
+        </li>
+        <li>Åpne i IntelliJ IDEA og la Gradle importere ferdig</li>
         <li>Generer Minecraft-kilder:
           <pre><code>Gradle → Tasks → fabric → genSources</code></pre>
         </li>
@@ -210,7 +213,6 @@
     <section>
       <h2>CTF — 11:30</h2>
       <ul>
-        <li>Alle får tilgang til Minecraft-serveren</li>
         <li>Flagg er gjemt rundt omkring — finn dem, post dem på CTFd</li>
         <li>Hint og dokumentasjon i <code>WORKSHOP.md</code></li>
         <li>Finner du noe kult? Koble til storskjermen og vis det frem!</li>
@@ -219,6 +221,21 @@
       <p style="text-align:center; font-size:1.2em;">
         <span class="accent">Lykke til 🎉</span>
       </p>
+    </section>
+
+    <!-- ── JOIN ─────────────────────────────────────────────── -->
+    <section>
+      <h2>Koble til serveren</h2>
+      <ol>
+        <li>Verifiser at du er medlem av <code>appsec-ctf</code> namespacet i <a href="https://console.nais.io">console.nais.io</a></li>
+        <li>Start port-forward:
+          <pre><code style="font-size:0.6em;">kubectl port-forward -n appsec-ctf \
+  $(kubectl get pod -n appsec-ctf -l app=minecraft-ctf \
+    -o jsonpath='{.items[0].metadata.name}') 25565:25565</code></pre>
+        </li>
+        <li>Åpne Minecraft → <strong>Multiplayer</strong> → <strong>Direct Connection</strong></li>
+        <li>Server address: <span class="accent"><strong>127.0.0.1</strong></span></li>
+      </ol>
     </section>
 
   </div>
