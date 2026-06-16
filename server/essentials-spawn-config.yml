@@ -1,12 +1,10 @@
 # EssentialsXSpawn configuration
 # Baked into the image and seeded to /data/plugins/EssentialsXSpawn/config.yml on first boot.
-# To change this config after first boot, edit the file directly on the PVC
-# (use the pvc-access pod pattern from the README) and restart the server.
 
 newbies:
-  # Teleport ALL players (not just new ones) to spawn on every join.
-  # This ensures everyone always lands in the bedrock box regardless of
-  # where they were when they last disconnected.
-  spawn-on-join: true
+  spawnpoint: default
   kit: ''
   message: ''
+
+# Teleport ALL players to spawn on every join, not just new players.
+spawn-on-join: true

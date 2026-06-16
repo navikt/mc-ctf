@@ -1,7 +1,7 @@
 # minecraft-ctf
 
 PaperMC server for the NAV Security Champions Minecraft hacking CTF.
-Runs on NAIS (appsec namespace), world state persisted in a PVC.
+Runs on NAIS (`appsec-ctf` namespace), world state persisted in a PVC.
 
 ## Repository structure
 
@@ -10,9 +10,11 @@ Runs on NAIS (appsec namespace), world state persisted in a PVC.
 ├── .github/workflows/deploy.yml        # build + deploy pipeline
 ├── .nais/
 │   ├── minecraft-pvc.yaml              # PersistentVolumeClaim (deploy once)
-│   └── minecraft.yaml                  # NAIS Application + LoadBalancer Service
+│   └── minecraft.yaml                  # NAIS Application
 ├── server/
 │   ├── server.properties               # baked into image — static server config
+│   ├── paper-global.yml                # baked into image — PaperMC global config
+│   ├── essentials-config.yml           # baked into image — EssentialsX config
 │   └── essentials-spawn-config.yml     # baked into image — EssentialsXSpawn config
 ├── Dockerfile
 └── entrypoint.sh                       # first-boot seed logic + healthcheck server
@@ -20,107 +22,89 @@ Runs on NAIS (appsec namespace), world state persisted in a PVC.
 
 ## How it works
 
-- On first pod start, `entrypoint.sh` downloads PaperMC, copies plugins and config into the PVC (`/data`), and starts the server.
-- On subsequent starts, `/data/paper.jar` already exists so the seed step is skipped and the server starts directly from the existing PVC state.
-- EssentialsXSpawn teleports every player to world spawn on join, so everyone always lands in the bedrock box.
-- Players connect in offline mode (no Mojang auth) — Fabric dev clients launched from IntelliJ work out of the box.
-- The server is only reachable from the internal network via the LoadBalancer Service.
+- On first pod start, `entrypoint.sh` copies PaperMC, plugins, and config from the image into the PVC (`/data`) and starts the server.
+- On subsequent starts, `paper.jar` already exists so the seed step is skipped and the server starts from existing PVC state.
+- `server.properties`, `paper-global.yml`, and EssentialsX configs are overwritten from the image on every boot — changes to those files must be made in the repo.
+- EssentialsXSpawn teleports every player to the world spawn on join.
+- Players connect in offline mode (no Mojang auth) — any username works. No players are OP'd.
+- Cheat protections and anti-cheat are disabled — flight, exploits, and custom clients are allowed.
 
-## First-time setup
+## Connecting (participants)
 
-**1. Deploy the PVC** (once only — it survives redeployments):
+Port-forward the Minecraft port to your local machine:
+
 ```bash
-kubectl apply -f .nais/minecraft-pvc.yaml -n ctf
+kubectl port-forward -n appsec-ctf $(kubectl get pod -n appsec-ctf -l app=minecraft-ctf -o jsonpath='{.items[0].metadata.name}') 25565:25565
 ```
 
-**2. Push to `main`** — the GitHub Actions workflow builds the image and deploys the Application.
+Then connect in Minecraft to `localhost:25565`.
 
-**3. Watch the first-boot log** until PaperMC finishes generating the world:
+## Deployment
+
+**PVC** (once only — survives redeployments):
 ```bash
-kubectl logs -f deployment/minecraft-ctf -n ctf
+kubectl apply -f .nais/minecraft-pvc.yaml -n appsec-ctf
+```
+
+**Application** — push to `main`. The GitHub Actions workflow builds the image and deploys it automatically.
+
+Watch startup logs:
+```bash
+kubectl logs -f deployment/minecraft-ctf -n appsec-ctf
 # Wait for: Done (Xs)! For help, type "help"
 ```
 
-**4. Get the external IP** for players to connect to:
-```bash
-kubectl get svc minecraft-ctf-tcp -n ctf
-# Use the EXTERNAL-IP value — may take a minute to provision
-```
+## Uploading a world
 
-**5. Set world spawn inside the bedrock box** (once, via server console):
-```bash
-kubectl exec -it deployment/minecraft-ctf -n ctf -- \
-  java -cp /data/paper.jar io.papermc.paperclip.Main --nogui
-```
-> Note: PaperMC console stdin isn't easily accessible via kubectl exec.
-> Use RCON (see below) or run these as startup commands via a Paper config.
-
-Via RCON or any OP'd player in-game:
-```
-/setworldspawn 0 65 0
-/gamerule spawnRadius 0
-/gamerule doMobSpawning false
-/gamerule doWeatherCycle false
-```
-
-## RCON
-
-Add to `server.properties` to enable RCON (rebuild and redeploy):
-```properties
-enable-rcon=true
-rcon.password=changeme
-rcon.port=25575
-```
-
-Then exec into the pod and use `mcron` or any RCON client pointed at `localhost:25575`.
-
-## World reset
-
-### Soft reset — wipe world only, keep plugins and config
-```bash
-kubectl exec -n ctf deployment/minecraft-ctf -- \
-  rm -rf /data/world /data/world_nether /data/world_the_end
-kubectl rollout restart deployment/minecraft-ctf -n ctf
-```
-
-### Hard reset — full re-seed from image
-```bash
-kubectl scale deployment minecraft-ctf --replicas=0 -n ctf
-kubectl delete pvc minecraft-ctf-data -n ctf
-kubectl apply -f .nais/minecraft-pvc.yaml -n ctf
-kubectl scale deployment minecraft-ctf --replicas=1 -n ctf
-```
-
-## Accessing the PVC directly (upload world files, plugins, etc.)
+Build the world in singleplayer (`mcworkshop`), then copy it to the server while it is running.
+Use a staging folder to avoid corrupting the live world mid-copy:
 
 ```bash
-# 1. Scale down — ReadWriteOnce allows only one pod to hold the volume
-kubectl scale deployment minecraft-ctf --replicas=0 -n ctf
+POD=$(kubectl get pod -n appsec-ctf -l app=minecraft-ctf -o jsonpath='{.items[0].metadata.name}')
 
-# 2. Spin up a temporary access pod
-kubectl run pvc-access \
-  --image=ubuntu:24.04 \
-  --restart=Never \
-  --namespace=ctf \
-  --overrides='{
-    "spec": {
-      "containers": [{
-        "name": "pvc-access",
-        "image": "ubuntu:24.04",
-        "command": ["sleep", "3600"],
-        "volumeMounts": [{"mountPath": "/data", "name": "mc-data"}]
-      }],
-      "volumes": [{"name": "mc-data", "persistentVolumeClaim": {"claimName": "minecraft-ctf-data"}}]
-    }
-  }'
+# Copy into staging folder
+kubectl cp "/path/to/saves/mcworkshop/." "appsec-ctf/${POD}:/data/mcworkshop-new"
 
-kubectl wait pod/pvc-access -n ctf --for=condition=Ready --timeout=60s
+# Atomically swap and restart
+kubectl exec -n appsec-ctf ${POD} -- bash -c \
+  "rm -rf /data/mcworkshop && mv /data/mcworkshop-new /data/mcworkshop && kill \$(pgrep -f paper.jar)"
+```
 
-# 3. Copy files in or out
-kubectl cp ./world/ ctf/pvc-access:/data/world        # upload pre-built world
-kubectl cp ctf/pvc-access:/data/world ./world-backup/ # download world backup
+The server restarts automatically and loads the new world.
 
-# 4. Clean up and bring the server back
-kubectl delete pod pvc-access -n ctf
-kubectl scale deployment minecraft-ctf --replicas=1 -n ctf
+### Setting the spawn point
+
+EssentialsX reads the spawn from `/data/plugins/Essentials/spawn.yml`. Set it directly:
+
+```bash
+kubectl exec -n appsec-ctf ${POD} -- bash -c "cat > /data/plugins/Essentials/spawn.yml << 'EOF'
+spawns:
+  default:
+    world: mcworkshop
+    x: -543.0
+    y: 71.0
+    z: -368.0
+    yaw: 0.0
+    pitch: 0.0
+EOF"
+```
+
+Then restart PaperMC to pick it up:
+```bash
+kubectl exec -n appsec-ctf ${POD} -- bash -c "kill \$(pgrep -f paper.jar)"
+```
+
+## PVC reset
+
+Wipes all world state and re-seeds from the image on next boot:
+
+```bash
+kubectl scale deployment minecraft-ctf --replicas=0 -n appsec-ctf
+kubectl delete pvc minecraft-ctf-data -n appsec-ctf
+kubectl apply -f .nais/minecraft-pvc.yaml -n appsec-ctf
+```
+
+GitHub Actions will scale the deployment back up automatically on the next push, or scale it up manually:
+```bash
+kubectl scale deployment minecraft-ctf --replicas=1 -n appsec-ctf
 ```
