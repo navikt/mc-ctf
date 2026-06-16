@@ -29,6 +29,14 @@ if [ ! -f "${DATA}/paper.jar" ]; then
     echo "[entrypoint] Seeding complete."
 fi
 
+# ── EssentialsX config patches ───────────────────────────────────────────────
+# Essentials generates its config.yml on first run — we can't seed it before
+# that. Instead, patch it on every boot so it survives plugin upgrades too.
+ESSENTIALS_CONFIG="${DATA}/plugins/Essentials/config.yml"
+if [ -f "${ESSENTIALS_CONFIG}" ]; then
+    sed -i 's/^update-check: true/update-check: false/' "${ESSENTIALS_CONFIG}"
+fi
+
 # ── Healthcheck HTTP server ───────────────────────────────────────────────────
 # NAIS liveness/readiness probes expect HTTP 200 on port 8080.
 # python3 -m http.server responds 200 to any GET — no extra dependencies needed.
