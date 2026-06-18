@@ -145,7 +145,7 @@
         <li>Generer Minecraft-kilder:
           <pre><code>Gradle → Tasks → fabric → genSources</code></pre>
         </li>
-        <li>Velg <strong>Minecraft Client</strong> i Run-menyen og trykk Run</li>
+        <li>Kjør <strong>Minecraft Client</strong> i Run-menyen</li>
       </ol>
       <p class="dim">Etter genSources kan du Ctrl+Klikke deg inn i hvilken som helst Minecraft-klasse.</p>
     </section>
@@ -201,11 +201,10 @@
     <section>
       <h2>Hvordan finne riktig hook</h2>
       <ol>
-        <li>Beskriv hva du vil: <em>"gjør noe når spilleren hopper"</em></li>
         <li>Søk i <a href="https://docs.fabricmc.net/develop/events">Fabric docs</a> eller bla i <a href="https://github.com/FabricMC/fabric-api/tree/1.21.11">fabric-api kildekoden</a></li>
         <li>Les Javadoc på eventet — sjekk callback-signaturen</li>
         <li>Ingen event? Bruk en <span class="accent">Mixin</span> for å injisere kode direkte i en Minecraft-metode</li>
-        <li><b>HUSK</b> at vi er på 1.21.11 når du leser dokumentasjonen. Stor forskjell på 26.</li>
+        <li><strong class="accent">HUSK at vi er på 1.21.11</strong> når du leser dokumentasjonen. Stor forskjell på 26.</li>
       </ol>
       <p class="dim">→ <a href="https://fabricmc.net/wiki/tutorial:mixin_introduction">Mixin intro</a> · <a href="https://github.com/SpongePowered/Mixin/wiki">SpongePowered Mixin wiki</a></p>
     </section>
