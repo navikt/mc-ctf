@@ -17,6 +17,9 @@ Runs on NAIS (`appsec-ctf` namespace), world state persisted in a PVC.
 │   ├── essentials-config.yml           # baked into image — EssentialsX config
 │   ├── essentials-spawn.yml            # baked into image — EssentialsX spawn point
 │   └── essentials-spawn-config.yml     # baked into image — EssentialsXSpawn config
+├── world/
+│   └── mcworkshop/                     # CTF world (no playerdata or stats)
+├── workshop/                           # presentation and workshop guide
 ├── Dockerfile
 └── entrypoint.sh                       # first-boot seed logic + healthcheck server
 ```
@@ -57,21 +60,18 @@ kubectl logs -f deployment/minecraft-ctf -n appsec-ctf
 
 ## Uploading a world
 
-Build the world in singleplayer (`mcworkshop`), then copy it to the server while it is running.
-Use a staging folder to avoid corrupting the live world mid-copy:
+The CTF world is included in this repo at `world/mcworkshop/`. Use a staging folder to avoid corrupting the live world mid-copy:
 
 ```bash
 POD=$(kubectl get pod -n appsec-ctf -l app=minecraft-ctf -o jsonpath='{.items[0].metadata.name}')
 
 # Copy into staging folder
-kubectl cp "/path/to/saves/mcworkshop/." "appsec-ctf/${POD}:/data/mcworkshop-new"
+kubectl cp "world/mcworkshop/." "appsec-ctf/${POD}:/data/mcworkshop-new"
 
 # Atomically swap and restart
 kubectl exec -n appsec-ctf ${POD} -- bash -c \
   "rm -rf /data/mcworkshop && mv /data/mcworkshop-new /data/mcworkshop && kill \$(pgrep -f paper.jar)"
 ```
-
-The server restarts automatically and loads the new world.
 
 ## PVC reset
 
